@@ -1,0 +1,7 @@
+log/
+result/
+doc/*
+!*.md
+.vscode/
+/test/log/
+/test/result/

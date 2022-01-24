@@ -1,0 +1,34 @@
+[spider]
+SPIDER_RES_DIR = "./result/spider/"
+SPIDER_IMAGE_DIR = "./result/img/"
+
+[novel]
+#xbook
+NOVEL_WEBSITE="https://book.xbookcn.net"
+NOVEL_THREAD_NUM=100
+NOVEL_URL_CHAPTER_APPEND="?max-results=200&by-date=false"
+# NOVEL_BASE_URL="https://book.xbookcn.net/search/label/"
+# NOVEL_RESULT_JSON_PATH="./result/spider/novel.json"
+# NOVEL_CHAPTER_CONSTANT=true
+# NOVEL_NAME=[
+# ]
+# NOVEL_DIR="./result/novel/"
+NOVEL_BASE_URL="https://blog.xbookcn.net/search/label/"
+NOVEL_RESULT_JSON_PATH="./result/spider/novel.short.json"
+NOVEL_CHAPTER_CONSTANT=true
+NOVEL_NAME=[
+]
+NOVEL_DIR="./result/novel/short/"
+# [novel]
+# 笔趣阁
+# NOVEL_WEBSITE="https://www.bbiquge.net"
+# NOVEL_URL=[
+#     "https://www.bbiquge.net/book_132488/",
+# ]
+
+[javdisk]
+# javdisk.com封面网站
+JAV_COVER_URL=[
+    "https://javdisk.com/"
+]
+IMG_DIR="/JAV/"
