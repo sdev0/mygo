@@ -21,16 +21,17 @@ const (
 )
 
 type MyLog struct {
-	mu      sync.Mutex // ensures atomic writes; protects the following fields
-	prefix  string     // prefix on each line to identify the logger (but see Lmsgprefix)
-	flag    int        // properties
-	out     io.Writer  // destination for output
-	buf     []byte     // for accumulating text to write
-	filelen int
+	mu         sync.Mutex // ensures atomic writes; protects the following fields
+	prefix     string     // prefix on each line to identify the logger (but see Lmsgprefix)
+	flag       int        // properties
+	out        io.Writer  // destination for output
+	buf        []byte     // for accumulating text to write
+	headerlen  int
+	showHeader bool
 }
 
 func NewMyLog(out io.Writer, prefix string, flag int) *MyLog {
-	return &MyLog{out: out, prefix: prefix, flag: flag, filelen: 40}
+	return &MyLog{out: out, prefix: prefix, flag: flag, headerlen: 40, showHeader: true}
 }
 
 // SetOutput sets the output destination for the logger.
@@ -114,7 +115,7 @@ func (l *MyLog) formatHeader(buf *[]byte, t time.Time, file string, line int) {
 		*buf = append(*buf, ':')
 		itoa(buf, line, -1)
 		lgth := len(*buf)
-		for lgth <= l.filelen {
+		for lgth <= l.headerlen {
 			*buf = append(*buf, ' ')
 			lgth++
 		}
@@ -131,7 +132,7 @@ func (l *MyLog) formatHeader(buf *[]byte, t time.Time, file string, line int) {
 // already a newline. Calldepth is used to recover the PC and is
 // provided for generality, although at the moment on all pre-defined
 // paths it will be 2.
-func (l *MyLog) Output(calldepth int, s string) (string, error) {
+func (l *MyLog) Output(calldepth int, s string) (string, string, error) {
 	now := time.Now() // get this early.
 	var file string
 	var line int
@@ -150,29 +151,42 @@ func (l *MyLog) Output(calldepth int, s string) (string, error) {
 	}
 	l.buf = l.buf[:0]
 	l.formatHeader(&l.buf, now, file, line)
+	header := l.buf
 	l.buf = append(l.buf, s...)
 	if len(s) == 0 || s[len(s)-1] != '\n' {
 		l.buf = append(l.buf, '\n')
 	}
 	_, err := l.out.Write(l.buf)
-	return string(l.buf), err
+	return string(header), string(l.buf[len(header):]), err
 }
 
 // Printf calls res, _ := l.Output to print to the logger.
 // Arguments are handled in the manner of fmt.Printf.
 func (l *MyLog) Printf(format string, v ...interface{}) {
-	res, _ := l.Output(2, fmt.Sprintf(format, v...))
+	head, res, _ := l.Output(2, fmt.Sprintf(format, v...))
+	if l.showHeader {
+		fmt.Print(head)
+	}
 	fmt.Print(res)
 }
 
 // Print calls res, _ := l.Output to print to the logger.
 // Arguments are handled in the manner of fmt.Print.
-func (l *MyLog) Print(v ...interface{}) { res, _ := l.Output(2, fmt.Sprint(v...)); fmt.Print(res) }
+func (l *MyLog) Print(v ...interface{}) {
+	head, res, _ := l.Output(2, fmt.Sprint(v...))
+	if l.showHeader {
+		fmt.Print(head)
+	}
+	fmt.Print(res)
+}
 
 // Println calls res, _ := l.Output to print to the logger.
 // Arguments are handled in the manner of fmt.Println.
 func (l *MyLog) Println(v ...interface{}) {
-	res, _ := l.Output(2, fmt.Sprintln(v...))
+	head, res, _ := l.Output(2, fmt.Sprintln(v...))
+	if l.showHeader {
+		fmt.Print(head)
+	}
 	fmt.Println(res)
 }
 
@@ -213,55 +227,75 @@ func (l *MyLog) Writer() io.Writer {
 	return l.out
 }
 
-func (l *MyLog)SetFileNameLen(length int) {
-	l.filelen = length
+// set head length
+func (l *MyLog) SetHeaderLen(length int) {
+	l.headerlen = length
 }
-
-
+// set whether show header
+func (l *MyLog) SetShowHeader(show bool) {
+	l.showHeader = show
+}
 func (l *MyLog) Llog(v ...interface{}) {
-	res, _ := l.Output(2, fmt.Sprintln(v...))
+	head, res, _ := l.Output(2, fmt.Sprintln(v...))
+	if l.showHeader {
+		fmt.Print(head)
+	}
 	fmt.Print(res)
 }
 func (l *MyLog) Llogf(format string, v ...interface{}) {
-	res, _ := l.Output(2, fmt.Sprintf(format, v...))
+	head, res, _ := l.Output(2, fmt.Sprintf(format, v...))
+	if l.showHeader {
+		fmt.Print(head)
+	}
 	fmt.Print(res)
 }
 func (l *MyLog) LogInfo(v ...interface{}) {
-	res, _ := l.Output(2, fmt.Sprintf("[INFO] %v\n", v...))
+	head, res, _ := l.Output(2, fmt.Sprintf("[INFO] %v\n", v...))
+	if l.showHeader {
+		fmt.Print(head)
+	}
 	fmt.Print(res)
 }
 func (l *MyLog) LogInfof(format string, v ...interface{}) {
-	res, _ := l.Output(2, fmt.Sprintf("[INFO] "+format, v...))
+	head, res, _ := l.Output(2, fmt.Sprintf("[INFO] "+format, v...))
+	if l.showHeader {
+		fmt.Print(head)
+	}
 	fmt.Print(res)
 }
 func (l *MyLog) LogErr(v ...interface{}) {
-	res, _ := l.Output(2, fmt.Sprintf("[ERROR] %v\n", v...))
+	head, res, _ := l.Output(2, fmt.Sprintf("[ERROR] %v\n", v...))
+	if l.showHeader {
+		fmt.Print(head)
+	}
 	fmt.Print(res)
 }
 func (l *MyLog) LogErrf(format string, v ...interface{}) {
-	res, _ := l.Output(2, fmt.Sprintf("[ERROR] "+format, v...))
+	head, res, _ := l.Output(2, fmt.Sprintf("[ERROR] "+format, v...))
+	if l.showHeader {
+		fmt.Print(head)
+	}
 	fmt.Print(res)
 }
 
-
 // 初始化log，启动时以每1小时为单位创建
-//  @param  logpath [string] 
-//  @param  flag [int] 
-//	Ldate         = 1 << iota     // the date in the local time zone: 2009/01/23  
-//	Ltime                         // the time in the local time zone: 01:23:23  
-//	Lmicroseconds                 // microsecond resolution: 01:23:23.123123.  assumes Ltime.  
-//	Llongfile                     // full file name and line number: /a/b/c/d.go:23  
-//	Lshortfile                    // final file name element and line number: d.go:23. overrides Llongfile  
-//	LUTC                          // if Ldate or Ltime is set, use UTC rather than the local time zone  
-//	Lmsgprefix                    // move the "prefix" from the beginning of the line to before the message  
-//	LstdFlags     = Ldate | Ltime // initial values for the standard logger  
-//  @return [*MyLog] 
-func InitLog(logpath string, flag int) *MyLog{
+//  @param  logpath [string]
+//  @param  flag [int]
+//	Ldate         = 1 << iota     // the date in the local time zone: 2009/01/23
+//	Ltime                         // the time in the local time zone: 01:23:23
+//	Lmicroseconds                 // microsecond resolution: 01:23:23.123123.  assumes Ltime.
+//	Llongfile                     // full file name and line number: /a/b/c/d.go:23
+//	Lshortfile                    // final file name element and line number: d.go:23. overrides Llongfile
+//	LUTC                          // if Ldate or Ltime is set, use UTC rather than the local time zone
+//	Lmsgprefix                    // move the "prefix" from the beginning of the line to before the message
+//	LstdFlags     = Ldate | Ltime // initial values for the standard logger
+//  @return [*MyLog]
+func InitLog(logpath string, flag int) *MyLog {
 	err := os.MkdirAll(logpath, os.ModePerm)
 	CheckError(err, true, "[ERROR] create log path failed. path:", logpath)
 	logfile, err := os.OpenFile(logpath+"/logger."+GetTimeStrByKey(T_DATE|T_HOUR)+".log", os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 	CheckError(err, true, "[ERROR] create log file failed.")
-	
+
 	logger := NewMyLog(logfile, "", flag)
 	return logger
 }

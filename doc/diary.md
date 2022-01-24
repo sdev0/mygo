@@ -18,6 +18,29 @@
 在网页后加上需要加载最大数量的信息。  
 怎么找到的呢：开发者选项进行刷新，找到xbookcn提供的文件，当将网页拉下去的时候，将会显示新加载的文件，新加载的文件的文件名就是请求的链接，链接内包含最大请求章节数
 
+## 2022.1.24
+
+打算：  
+- [x] 测试`ping`  
+>测试均在linux下进行  
+1. 使用linux下的`ping`连接成功命令
+```
+ping -c 1 -W 3 %s > /dev/null && echo true || echo false
+```
+2. 使用`go-ping/ping`接收ping信息
+```go
+pinger, err := ping.NewPinger(ip)                // 创建pinger
+pinger.Debug = true                              // 设置是否需要调试
+pinger.Timeout = time.Second                     // 设置单词ping时长
+pinger.Count = 3                                 // 设置ping次数
+pinger.OnFinish = func(s *ping.Statistics) {}    // ping结束后初始数据（多次ping结果）
+pinger.OnDuplicateRecv = func(p *ping.Packet) {} // 处理已经被接收的数据包又被ping接收
+pinger.OnRecv = func(p *ping.Packet) {}          // 处理单次ping接收数据包
+pinger.Run()                                     // 执行ping
+```
+
+
+
 # 记录ing
 
 ## 教程
