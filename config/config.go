@@ -17,6 +17,7 @@ type NovelConf struct {
 	NovelBaseUrl        string   `toml:"NOVEL_BASE_URL"`
 	NovelDir            string   `toml:"NOVEL_DIR"`
 	NovelName           []string `toml:"NOVEL_NAME"`
+	NovelURL          []string `toml:"NOVEL_URL"`
 	NovelResultJsonPath string   `toml:"NOVEL_RESULT_JSON_PATH"`
 	Url_Append          string   `toml:"NOVEL_URL_CHAPTER_APPEND"`
 	ThreadNum           int      `toml:"NOVEL_THREAD_NUM"`

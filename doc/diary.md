@@ -39,6 +39,12 @@ pinger.OnRecv = func(p *ping.Packet) {}          // 处理单次ping接收数据
 pinger.Run()                                     // 执行ping
 ```
 
+## 2022.1.26
+
+日程：  
+- [x] 完成layuimini部署在beego上
+- [x] 完成92qb的小说爬虫
+在使用colly爬取内容的时候，如果爬取下来的内容是乱码的，那么就在colly定义collector的下面，写上这么个语句：`colly.Collector.DetectCharset = true`
 
 
 # 记录ing

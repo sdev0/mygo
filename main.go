@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-ping/ping"
+	"github.com/sdev0/mygo/mycmd"
 	"github.com/sdev0/mygo/sdk"
 )
 
@@ -27,6 +28,8 @@ func main() {
 	//test2DArray()
 	//testSliceFormat()
 	//testConstValue()
+	mycmd.InitAll()
+	mycmd.Spider92qb()
 }
 
 //////////////// test ping ////////////////
