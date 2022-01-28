@@ -3,8 +3,11 @@ SPIDER_RES_DIR = "./result/spider/"
 SPIDER_IMAGE_DIR = "./result/img/"
 
 [novel]
+##########################################
+# 小说章节内容链接组成形式：BASE_URL/URL/  #
+##########################################
 NOVEL_INDEX=2                # 选择第几本书
-NOVEL_THREAD_NUM=1           # 读取小说线程数
+NOVEL_THREAD_NUM=10          # 读取小说线程数
 NOVEL_CHAPTER_CONSTANT=true  # 是否章节连续
 NOVEL_WEBSITE=[
     # "https://blog.xbookcn.net/search/label/"
@@ -43,10 +46,16 @@ NOVEL_RESULT_JSON_PATH=[
 # ]
 ## 92qb.com
 NOVEL_NAME=[
-    "奇门遁甲",
+    #"奇门遁甲",
+    "三途志",
+    "跳大神",
+    "我当鸟人的那几年",
 ]
 NOVEL_URL=[
-    "/3/3468/"
+    # "/3/3468/"
+    "/30/30797/",
+    "/24/24254/",
+    "/10/10409/",
 ]
 
 

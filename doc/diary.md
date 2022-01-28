@@ -50,7 +50,7 @@ pinger.Run()                                     // 执行ping
 
 日程  
 - [x] 优化novel spider的配置和爬取函数
-
+- [x] 验证并优化爬取92qb.com函数
 
 
 # 记录ing

@@ -102,7 +102,7 @@ func getNovelByChannel(getChapterContent func(string, *os.File) error) {
 		file := sdk.CreateFileByPath(pConf.NovelDir+novelName+".txt", os.O_CREATE|os.O_RDWR|os.O_APPEND)
 		Linfof("正在获取 %s, 共 %d 章\n", novelName, len(chapters))
 		for i := range chapters {
-			if i > len(novelMap[novelName]) {
+			if i >= len(novelMap[novelName]) {
 				if err := getChapterContent(chapters[i].Url, file); err == nil {
 					Linfof("正在获取: %s, %s\n", novelName, chapters[i].Title)
 					novelMap[novelName] = append(novelMap[novelName], chapters[i])
@@ -130,13 +130,18 @@ func spiderBook(getChapter func(string) ([]Chapter, error), byNumber bool, getCh
 			go getNovelByChannel(getChapterContent)
 		}
 	}
-	for _, novelName := range pConf.NovelName {
+	for i, novelName := range pConf.NovelName {
 		if _, ok := novelMap[novelName]; !ok {
 			novelMap[novelName] = []Chapter{}
 		}
-		chapters, err := getChapter(pConf.NovelBaseUrl + novelName + pConf.Url_Append)
+		chapters, err := getChapter(pConf.NovelBaseUrl + pConf.NovelURL[i] + pConf.Url_Append)
 		if err != nil {
 			return err
+		}
+		Linfo("NovelName:", novelName)
+		Linfo("Chapters:")
+		for i, chapter := range chapters {
+			Logf("%04d:%s", i, chapter.Title)
 		}
 		spiderCnt++
 		novelChan <- NovelInfo{Name: novelName, Chapters: chapters}
@@ -303,7 +308,7 @@ func get92qbChapter(aimurl string) ([]Chapter, error) {
 	Linfof("get the url chapters: %s\n", aimurl)
 	var chapters []Chapter
 	cl.OnHTML(".mulu_list>li", func(h *colly.HTMLElement) {
-		chapters = append(chapters, Chapter{Title: h.ChildText("a"), Url: h.ChildAttr("a", "href")})
+		chapters = append(chapters, Chapter{Title: h.ChildText("a"), Url: aimurl + h.ChildAttr("a", "href")})
 	})
 	var Err error = nil
 	cl.OnError(func(_ *colly.Response, err error) {
