@@ -12,12 +12,24 @@ import (
 	"github.com/sdev0/mygo/sdk"
 )
 
+type NovelAllConf struct {
+	NovelIndex          int      `toml:"NOVEL_INDEX"`
+	NovelWebsite        []string `toml:"NOVEL_WEBSITE"`
+	NovelBaseUrl        []string `toml:"NOVEL_BASE_URL"`
+	NovelDir            []string `toml:"NOVEL_DIR"`
+	NovelName           []string `toml:"NOVEL_NAME"`
+	NovelURL            []string `toml:"NOVEL_URL"`
+	NovelResultJsonPath []string `toml:"NOVEL_RESULT_JSON_PATH"`
+	Url_Append          string   `toml:"NOVEL_URL_CHAPTER_APPEND"`
+	ThreadNum           int      `toml:"NOVEL_THREAD_NUM"`
+	ChapterConstant     bool     `toml:"NOVEL_CHAPTER_CONSTANT=false"`
+}
 type NovelConf struct {
 	NovelWebsite        string   `toml:"NOVEL_WEBSITE"`
 	NovelBaseUrl        string   `toml:"NOVEL_BASE_URL"`
 	NovelDir            string   `toml:"NOVEL_DIR"`
 	NovelName           []string `toml:"NOVEL_NAME"`
-	NovelURL          []string `toml:"NOVEL_URL"`
+	NovelURL            []string `toml:"NOVEL_URL"`
 	NovelResultJsonPath string   `toml:"NOVEL_RESULT_JSON_PATH"`
 	Url_Append          string   `toml:"NOVEL_URL_CHAPTER_APPEND"`
 	ThreadNum           int      `toml:"NOVEL_THREAD_NUM"`
@@ -37,9 +49,9 @@ type JavdiskConf struct {
 //  @param  [Spider]  spider配置
 //  @param  [Javdisk] javdisk网站配置
 type Config struct {
-	Novel   NovelConf   `toml:"novel"`
-	Spider  SpiderConf  `toml:"spider"`
-	Javdisk JavdiskConf `toml:"javdisk"`
+	NovelAll NovelAllConf `toml:"novel"`
+	Spider   SpiderConf   `toml:"spider"`
+	Javdisk  JavdiskConf  `toml:"javdisk"`
 }
 
 // 初始化自定义配置，配置必须是toml，且结构体必须含有初始化toml的信息

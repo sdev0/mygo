@@ -46,6 +46,12 @@ pinger.Run()                                     // 执行ping
 - [x] 完成92qb的小说爬虫
 在使用colly爬取内容的时候，如果爬取下来的内容是乱码的，那么就在colly定义collector的下面，写上这么个语句：`colly.Collector.DetectCharset = true`
 
+## 2022.1.28
+
+日程  
+- [x] 优化novel spider的配置和爬取函数
+
+
 
 # 记录ing
 

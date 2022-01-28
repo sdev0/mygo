@@ -2,39 +2,46 @@
 SPIDER_RES_DIR = "./result/spider/"
 SPIDER_IMAGE_DIR = "./result/img/"
 
-# [novel]
-#xbook
-# NOVEL_WEBSITE="https://book.xbookcn.net"
-# NOVEL_THREAD_NUM=100
+[novel]
+NOVEL_INDEX=2                # 选择第几本书
+NOVEL_THREAD_NUM=1           # 读取小说线程数
+NOVEL_CHAPTER_CONSTANT=true  # 是否章节连续
+NOVEL_WEBSITE=[
+    # "https://blog.xbookcn.net/search/label/"
+    "https://book.xbookcn.net",
+    "https://www.bbiquge.net",
+    "https://www.92qb.com/",
+]
+NOVEL_BASE_URL=[
+    "https://book.xbookcn.net/search/label/",
+    "",
+    "https://www.92qb.com/xiaoshuo",
+]
+NOVEL_DIR=[
+    "./result/novel/xbook/",
+    "./result/novel/biquge/",
+    "./result/novel/92qb/",
+]
+NOVEL_RESULT_JSON_PATH=[
+    # "./result/spider/novel.short.json",
+    "./result/spider/novel.92qb.json",
+    "./result/spider/novel.biquge.json",
+    "./result/spider/novel.92qb.json",
+]
+## xbook
 # NOVEL_URL_CHAPTER_APPEND="?max-results=200&by-date=false"
-# NOVEL_BASE_URL="https://book.xbookcn.net/search/label/"
-# NOVEL_RESULT_JSON_PATH="./result/spider/novel.json"
-# NOVEL_CHAPTER_CONSTANT=true
 # NOVEL_NAME=[
 # ]
-# NOVEL_DIR="./result/novel/"
-## short novel
-# NOVEL_BASE_URL="https://blog.xbookcn.net/search/label/"
-# NOVEL_RESULT_JSON_PATH="./result/spider/novel.short.json"
-# NOVEL_CHAPTER_CONSTANT=true
-# NOVEL_NAME=[
+# NOVEL_URL=[
 # ]
-# NOVEL_DIR="./result/novel/short/"
-# [novel]
-# 笔趣阁
+## 笔趣阁
 # NOVEL_WEBSITE="https://www.bbiquge.net"
+# NOVEL_NAME=[
+# ]
 # NOVEL_URL=[
 #     "https://www.bbiquge.net/book_132488/",
 # ]
-
-[novel]
-# 92qb.com
-NOVEL_WEBSITE="https://www.92qb.com/"
-NOVEL_BASE_URL="https://www.92qb.com/xiaoshuo"
-NOVEL_RESULT_JSON_PATH="./result/spider/novel.92qb.json"
-NOVEL_DIR="./result/novel/92qb/"
-NOVEL_THREAD_NUM=1
-NOVEL_CHAPTER_CONSTANT=true
+## 92qb.com
 NOVEL_NAME=[
     "奇门遁甲",
 ]

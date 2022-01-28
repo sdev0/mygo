@@ -37,6 +37,21 @@ type Chapter struct {
 
 //////////// init region ////////////
 
+func initConfig() {
+	idx := Config.NovelAll.NovelIndex
+	pConf = config.NovelConf{
+		NovelWebsite:        Config.NovelAll.NovelWebsite[idx],
+		NovelBaseUrl:        Config.NovelAll.NovelBaseUrl[idx],
+		NovelDir:            Config.NovelAll.NovelDir[idx],
+		NovelName:           Config.NovelAll.NovelName,
+		NovelURL:            Config.NovelAll.NovelURL,
+		NovelResultJsonPath: Config.NovelAll.NovelResultJsonPath[idx],
+		Url_Append:          Config.NovelAll.Url_Append,
+		ThreadNum:           Config.NovelAll.ThreadNum,
+		ChapterConstant:     Config.NovelAll.ChapterConstant,
+	}
+}
+
 func initDownloadInfo(confPath string) {
 	novelDownInfo = NovelDownloadInfo{}
 	if !sdk.PathExist(confPath) {
@@ -64,12 +79,9 @@ func getNovelByChannelWithNumber(getChapterContent func(string, int, *os.File) e
 		Linfof("正在获取 %s, 共 %d 章\n", novelName, len(chapters))
 		for i := range chapters {
 			if i > len(novelMap[novelName]) {
-				// if err := getChapterContentByHttp(chapters[i].Url, file); err == nil {
 				if err := getChapterContent(chapters[i].Url, i, file); err == nil {
 					Linfof("正在获取%03d: %s, %s\n", i, novelName, chapters[i].Title)
-					chs := novelMap[novelName]
-					chs = append(chs, chapters[i])
-					novelMap[novelName] = chs
+					novelMap[novelName] = append(novelMap[novelName], chapters[i])
 				} else {
 					Lerr(novelName, err.Error())
 					if pConf.ChapterConstant {
@@ -91,12 +103,9 @@ func getNovelByChannel(getChapterContent func(string, *os.File) error) {
 		Linfof("正在获取 %s, 共 %d 章\n", novelName, len(chapters))
 		for i := range chapters {
 			if i > len(novelMap[novelName]) {
-				// if err := getChapterContentByHttp(chapters[i].Url, file); err == nil {
 				if err := getChapterContent(chapters[i].Url, file); err == nil {
 					Linfof("正在获取: %s, %s\n", novelName, chapters[i].Title)
-					chs := novelMap[novelName]
-					chs = append(chs, chapters[i])
-					novelMap[novelName] = chs
+					novelMap[novelName] = append(novelMap[novelName], chapters[i])
 				} else {
 					Lerr(novelName, err.Error())
 					if pConf.ChapterConstant {
@@ -109,19 +118,64 @@ func getNovelByChannel(getChapterContent func(string, *os.File) error) {
 	}
 }
 
+//////////// Spider Book ////////////
+func spiderBook(getChapter func(string) ([]Chapter, error), byNumber bool, getChapterContent func(string, *os.File) error, getChapterContentWithNumber func(string, int, *os.File) error) error {
+	initConfig()
+	initDownloadInfo(pConf.NovelResultJsonPath)
+	Linfo("start to spider...")
+	for i := 1; i <= pConf.ThreadNum; i++ {
+		if byNumber {
+			go getNovelByChannelWithNumber(getChapterContentWithNumber)
+		} else {
+			go getNovelByChannel(getChapterContent)
+		}
+	}
+	for _, novelName := range pConf.NovelName {
+		if _, ok := novelMap[novelName]; !ok {
+			novelMap[novelName] = []Chapter{}
+		}
+		chapters, err := getChapter(pConf.NovelBaseUrl + novelName + pConf.Url_Append)
+		if err != nil {
+			return err
+		}
+		spiderCnt++
+		novelChan <- NovelInfo{Name: novelName, Chapters: chapters}
+	}
+	for {
+		if spiderCnt <= 0 {
+			break
+		}
+	}
+	novelDownInfo = NovelDownloadInfo{}
+	for name, chapters := range novelMap {
+		novelDownInfo.NovelInfos = append(novelDownInfo.NovelInfos, NovelInfo{Name: name, Chapters: chapters})
+	}
+	bytes, err := json.Marshal(novelDownInfo)
+	if err != nil {
+		Lerr("配置marshal失败", err.Error())
+		return err
+	} else {
+		file := sdk.CreateFileByPath(pConf.NovelResultJsonPath, os.O_CREATE|os.O_WRONLY)
+		file.Write(bytes)
+	}
+	return nil
+}
+
 //////////// XBOOK ////////////
 
-func getXbookChapter(url string) []Chapter {
+func getXbookChapter(url string) ([]Chapter, error) {
 	cl := colly.NewCollector()
 	var chapters []Chapter
 	cl.OnHTML(".date-outer>.entry-title", func(h *colly.HTMLElement) {
 		chapters = append(chapters, Chapter{Title: h.ChildText("a"), Url: h.ChildAttr("a", "href")})
 	})
+	var Err error = nil
 	cl.OnError(func(_ *colly.Response, err error) {
 		Lerr(err)
+		Err = err
 	})
 	cl.Visit(url)
-	return chapters
+	return chapters, Err
 }
 
 func getXbookChapterContent(aimurl string, file *os.File) {
@@ -135,29 +189,30 @@ func getXbookChapterContent(aimurl string, file *os.File) {
 		h.ForEach("p", func(i int, s *colly.HTMLElement) {
 			file.WriteString(s.Text + "\n")
 		})
-		// file.WriteString(h.ChildText("p") + "\n")
 	})
 	cl.OnError(func(_ *colly.Response, err error) {
 		Lerr(err)
 	})
 	cl.Visit(aimurl)
-
 }
 
-func getXbookChapterByHttp(aimurl string) []Chapter {
+func getXbookChapterByHttp(aimurl string) ([]Chapter, error) {
 	// Request the HTML page.
 	res, err := http.Get(aimurl)
 	if err != nil {
 		Lerr(err)
-		return nil
+		return nil, err
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		Lerrf("status code error: %d %s", res.StatusCode, res.Status)
+		err := fmt.Errorf("status code error: %d %s", res.StatusCode, res.Status)
+		Lerr(err)
+		return nil, err
 	}
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
 		Lerr(err)
+		return nil, err
 	}
 
 	var chapters []Chapter
@@ -168,10 +223,10 @@ func getXbookChapterByHttp(aimurl string) []Chapter {
 		url, _ := s.Find("a").Attr("href")
 		chapters = append(chapters, Chapter{Title: title, Url: url})
 	})
-	return chapters
+	return chapters, nil
 }
 
-func getChapterContentByHttp(aimurl string, file *os.File) error {
+func getXBookChapterContentByHttp(aimurl string, file *os.File) error {
 	// Request the HTML page.
 	res, err := http.Get(aimurl)
 
@@ -197,7 +252,7 @@ func getChapterContentByHttp(aimurl string, file *os.File) error {
 	return nil
 }
 
-func getChapterContentByHttpWithNumber(aimurl string, number int, file *os.File) error {
+func getXBookChapterContentByHttpWithNumber(aimurl string, number int, file *os.File) error {
 	// Request the HTML page.
 	res, err := http.Get(aimurl)
 
@@ -226,81 +281,23 @@ func getChapterContentByHttpWithNumber(aimurl string, number int, file *os.File)
 	return nil
 }
 
-
 func SpiderXbook() {
-	pConf = Config.Novel
-	initDownloadInfo(pConf.NovelResultJsonPath)
-	Linfo("start to spider...")
-	for i := 1; i <= pConf.ThreadNum; i++ {
-		go getNovelByChannelWithNumber(getChapterContentByHttpWithNumber)
-	}
-	for _, novelName := range pConf.NovelName {
-		if _, ok := novelMap[novelName]; !ok {
-			novelMap[novelName] = []Chapter{}
-		}
-		chapters := getXbookChapterByHttp(pConf.NovelBaseUrl + novelName + pConf.Url_Append)
-		spiderCnt++
-		novelChan <- NovelInfo{Name: novelName, Chapters: chapters}
-	}
-	for {
-		if spiderCnt <= 0 {
-			break
-		}
-	}
-	novelDownInfo = NovelDownloadInfo{}
-	for name, chapters := range novelMap {
-		novelDownInfo.NovelInfos = append(novelDownInfo.NovelInfos, NovelInfo{Name: name, Chapters: chapters})
-	}
-	bytes, err := json.Marshal(novelDownInfo)
+	err := spiderBook(getXbookChapter, true, getXBookChapterContentByHttp, getXBookChapterContentByHttpWithNumber)
 	if err != nil {
-		Lerr("配置marshal失败", err.Error())
-	} else {
-		file := sdk.CreateFileByPath(pConf.NovelResultJsonPath, os.O_CREATE|os.O_WRONLY)
-		file.Write(bytes)
+		Lerr("获取小说失败")
 	}
 }
-
 
 //////////// 92qb ////////////
 
 func Spider92qb() {
-	pConf = Config.Novel
-	initDownloadInfo(pConf.NovelResultJsonPath)
-	Linfo("start to spider 92qb.com...")
-	for i := 1; i <= pConf.ThreadNum; i++ {
-		go getNovelByChannel(get92qbChapterContent)
-	}
-	for i, novelName := range pConf.NovelName {
-		if _, ok := novelMap[novelName]; !ok {
-			novelMap[novelName] = []Chapter{}
-		}
-		chapterUrl := pConf.NovelBaseUrl + pConf.NovelURL[i]
-		chapters := get92qbChapter(chapterUrl)
-		for i := range chapters {
-			chapters[i].Url = chapterUrl + "/" + chapters[i].Url
-		}
-		spiderCnt++
-		novelChan <- NovelInfo{Name: novelName, Chapters: chapters}
-	}
-	for {
-		if spiderCnt <= 0 {
-			break
-		}
-	}
-	novelDownInfo = NovelDownloadInfo{}
-	for name, chapters := range novelMap {
-		novelDownInfo.NovelInfos = append(novelDownInfo.NovelInfos, NovelInfo{Name: name, Chapters: chapters})
-	}
-	bytes, err := json.Marshal(novelDownInfo)
+	err := spiderBook(get92qbChapter, false, get92qbChapterContent, nil)
 	if err != nil {
-		Lerr("配置marshal失败", err.Error())
-	} else {
-		file := sdk.CreateFileByPath(pConf.NovelResultJsonPath, os.O_CREATE|os.O_WRONLY)
-		file.Write(bytes)
+		Lerr("获取小说失败")
 	}
 }
 
-func get92qbChapter(aimurl string) []Chapter {
+func get92qbChapter(aimurl string) ([]Chapter, error) {
 	cl := colly.NewCollector()
 	cl.DetectCharset = true
 	Linfof("get the url chapters: %s\n", aimurl)
@@ -308,19 +305,21 @@ func get92qbChapter(aimurl string) []Chapter {
 	cl.OnHTML(".mulu_list>li", func(h *colly.HTMLElement) {
 		chapters = append(chapters, Chapter{Title: h.ChildText("a"), Url: h.ChildAttr("a", "href")})
 	})
+	var Err error = nil
 	cl.OnError(func(_ *colly.Response, err error) {
 		Lerr(err)
+		Err = err
 	})
 	cl.Visit(aimurl)
-	return chapters
+	return chapters, Err
 }
 
-func get92qbChapterByHttp(aimurl string) []Chapter {
+func get92qbChapterByHttp(aimurl string) ([]Chapter, error) {
 	// Request the HTML page.
 	res, err := http.Get(aimurl)
 	if err != nil {
 		Lerr(err)
-		return nil
+		return nil, err
 	}
 	defer res.Body.Close()
 	Linfof("get the url chapters: %s\n", aimurl)
@@ -330,6 +329,7 @@ func get92qbChapterByHttp(aimurl string) []Chapter {
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
 		Lerr(err)
+		return nil, err
 	}
 
 	var chapters []Chapter
@@ -340,10 +340,10 @@ func get92qbChapterByHttp(aimurl string) []Chapter {
 		url, _ := s.Find("a").Attr("href")
 		chapters = append(chapters, Chapter{Title: title, Url: url})
 	})
-	return chapters
+	return chapters, nil
 }
 
-func get92qbChapterContent(aimurl string, file *os.File) error{
+func get92qbChapterContent(aimurl string, file *os.File) error {
 	cl := colly.NewCollector()
 	cl.DetectCharset = true
 	title := ""
