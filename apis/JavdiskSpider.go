@@ -1,4 +1,4 @@
-package mycmd
+package apis
 
 import (
 	"fmt"
