@@ -1,5 +1,7 @@
 package test
 
+import "strings"
+
 //////////////// test two-dimensional array ////////////////
 func test2DArray() {
 	Log("####### test two-dimensional array")
@@ -56,3 +58,29 @@ func testConstValue() {
 		", var_7 =", con_var_7,
 	)
 }
+
+//////////////// test string trim ////////////////
+//// trim      是将字符串的 开始 和 结尾 全部指定字符串去除
+//// trimSpace 是将字符串的 开始 和 结尾 全部空格去除
+//// trimSuffix 和 trimPrefix 是将字符串和 结尾/开始 第一个符合的指定字符串去除
+
+func testStringTrim() {
+	strArr := []string {
+		"  content  ",
+		"  c o n t e n t  ",
+		"  content",
+		"content  ",
+		"c o n t e n t",
+	}
+
+	for _, str := range strArr {
+		Linfof("原字符串：[%s], trim(\" \")后：[%s]", str, strings.Trim(str, " "))
+		Linfof("原字符串：[%s], trimSpace  后：[%s]", str, strings.TrimSpace(str))
+		Linfof("原字符串：[%s], trimPrefix 后：[%s]", str, strings.TrimPrefix(str, " "))
+		Linfof("原字符串：[%s], TrimSuffix 后：[%s]", str, strings.TrimSuffix(str, " "))
+	}
+}
+
+
+
+//////////////// ////////////////

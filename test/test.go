@@ -25,5 +25,5 @@ func init() {
 }
 
 func DoTest() {
-
+	testStringTrim()
 }

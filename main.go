@@ -4,10 +4,12 @@
 package main
 
 import (
-	"github.com/sdev0/mygo/apis"
+	_ "github.com/sdev0/mygo/apis"
+	"github.com/sdev0/mygo/test"
 )
 
 func main() {
-	apis.InitAll()
-	apis.Spider92qb()
+	// apis.InitAll()
+	// apis.Spider92qb()
+	test.DoTest()
 }
