@@ -5,3 +5,4 @@ doc/*
 .vscode/
 /test/log/
 /test/result/
+/static/textFiles/*.txt

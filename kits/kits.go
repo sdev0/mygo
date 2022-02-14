@@ -1,4 +1,4 @@
-package test
+package kits
 
 import "github.com/sdev0/mygo/sdk"
 
@@ -24,6 +24,7 @@ func init() {
 	mylog.SetShowHeader(false)
 }
 
-func DoTest() {
-	
+func DoKit() {
+	// inpath, outpath := "./static/textFiles/sqlTable.txt", "./static/textFiles/sqlout.txt"
+	// FormatFiles(inpath, outpath, true)
 }
